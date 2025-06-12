@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  extractor:
+    build: ./extractor
+    volumes:
+      - ./extractor:/app
+    ports:
+      - "8000:8000"
+  web:
+    build: ./web
+    volumes:
+      - ./web:/app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - extractor
