@@ -1,0 +1,7 @@
+openai
+python-dotenv
+validate_docbr
+python-docx
+openpyxl
+PyPDF2
+tqdm
