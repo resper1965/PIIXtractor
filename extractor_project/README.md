@@ -1,5 +1,8 @@
 # Extractor Project
 
+
+This folder holds auxiliary data for the extractor. The pipeline is executed from the project root using a single entry point:
+=======
 This project organizes the extraction workflow.
 
 ## Requirements
@@ -17,10 +20,9 @@ pip install -r ../requirements.txt
 
 Then use the script inside this folder to process archives:
 
+
 ```bash
-cd extractor_project
-python extractor_drive.py path/to/your.zip
+python extractor_drive.py
 ```
 
-The contents are extracted into `tmp/`. After processing, the results are saved
-as CSV, JSON and SQLite files inside the `data/` directory.
+Results are stored in the `data/` directory and temporary files are created in `tmp/`.
