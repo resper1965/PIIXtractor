@@ -15,12 +15,11 @@ from validate_docbr import CPF, CNPJ
 from docx import Document
 from openpyxl import load_workbook
 from PyPDF2 import PdfReader
-from openai import OpenAI
+from extractor.openai_classifier import classify_text
 from tqdm import tqdm
 
 # --- Initial Configuration ---
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 logging.basicConfig(
     level=logging.INFO,
@@ -85,30 +84,6 @@ def extrair_regex(texto: str) -> Dict[str, Any]:
     return resultado
 
 
-def classificar_com_gpt(texto: str) -> str:
-    """Consulta a API do GPT para classificar dados pessoais."""
-    max_chars = 12000
-    if len(texto) > max_chars:
-        logging.warning("Texto excede limite, truncando para 12000 caracteres.")
-        texto = texto[:max_chars]
-
-    prompt = f'''\
-Extraia todos os dados pessoais (nome, CPF, CNPJ, e-mail, telefone, endereço, data de nascimento) do texto abaixo e retorne um JSON com os campos detectados e seus respectivos valores.
-
-Texto:
-"""{texto}"""
-'''
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.0,
-            max_tokens=800
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        logging.error(f"[GPT] Erro: {e}")
-        return "{}"
 
 
 @dataclass
@@ -148,7 +123,9 @@ def processar_diretorio(diretorio: str) -> Dict[str, Any]:
             progresso.atualizar()
             continue
         regex_result = extrair_regex(texto)
-        gpt_result = classificar_com_gpt(texto)
+        gpt_result = ""
+        if not regex_result:
+            gpt_result = classify_text(texto)
         resultados[caminho] = {
             "regex": regex_result,
             "gpt": gpt_result
