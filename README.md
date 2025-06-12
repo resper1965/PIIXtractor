@@ -11,7 +11,7 @@ OpenAI para melhorar a detecção de dados.
 3. Execute o script principal:
 
 ```bash
-python pii_extractor.py
+python extractor_drive.py
 ```
 
 Durante o processamento será exibida uma barra de progresso indicando o avanço.
