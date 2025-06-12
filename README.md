@@ -4,6 +4,14 @@ Ferramenta simples para extração de informações pessoais de arquivos de text
 PDF, planilhas ou documentos Word. Utiliza expressões regulares e, quando
 necessário, a API da OpenAI para classificar trechos de texto.
 
+### Instalação
+
+Antes de executar a ferramenta, instale as dependências:
+
+```bash
+pip install -r requirements.txt
+```
+
 ### Uso
 
 1. Coloque o arquivo ZIP contendo os documentos no mesmo diretório.
