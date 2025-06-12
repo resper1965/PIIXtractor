@@ -1,8 +1,8 @@
 # PIIXtractor
 
 Ferramenta simples para extração de informações pessoais de arquivos de texto,
-PDF, planilhas ou documentos Word. Utiliza expressões regulares e a API da
-OpenAI para melhorar a detecção de dados.
+PDF, planilhas ou documentos Word. Utiliza expressões regulares e, quando
+necessário, a API da OpenAI para classificar trechos de texto.
 
 ### Uso
 
