@@ -1,7 +1,21 @@
 # Extractor Project
 
-This project organizes the extraction workflow. Use the script inside this
-folder to process archives:
+This project organizes the extraction workflow.
+
+## Requirements
+
+- Python 3.10+
+
+Create and activate a virtual environment and install dependencies from the
+repository root:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r ../requirements.txt
+```
+
+Then use the script inside this folder to process archives:
 
 ```bash
 cd extractor_project
