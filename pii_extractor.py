@@ -8,6 +8,7 @@ import csv
 import json
 import sqlite3
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, Any
 
 from dotenv import load_dotenv
@@ -26,6 +27,8 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s"
 )
+
+TMP_ROOT = Path("tmp")
 
 REGEX_PATTERNS = {
     "email": re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
@@ -226,18 +229,18 @@ def exportar_resultados_sqlite(resultados: Dict[str, Any], db_path: str = "resul
 
 def extrair_e_processar_zip(zip_path: str) -> Dict[str, Any]:
     """Extrai arquivos de um ZIP e processa seu conteúdo."""
-    tmpdir = "/tmp/piiextractor_tmp"
-    os.makedirs(tmpdir, exist_ok=True)
+    tmpdir = TMP_ROOT / "piiextractor_tmp"
+    tmpdir.mkdir(parents=True, exist_ok=True)
 
     try:
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(tmpdir)
             logging.info(f"ZIP extraído em: {tmpdir}")
     except Exception as e:
         logging.error(f"[ERRO ao extrair ZIP] {e}")
         return {}
 
-    resultados = processar_diretorio(tmpdir)
+    resultados = processar_diretorio(str(tmpdir))
 
     try:
         shutil.rmtree(tmpdir)
@@ -261,3 +264,9 @@ if __name__ == "__main__":
     exportar_resultados_json(resultados, caminho_json="resultados.json")
     exportar_resultados_sqlite(resultados, db_path="resultados.db")
     logging.info("Exportação concluída: CSV, JSON e SQLite.")
+
+    try:
+        shutil.rmtree(TMP_ROOT)
+        logging.info(f"Diretório temporário removido: {TMP_ROOT}")
+    except Exception as e:
+        logging.warning(f"Falha ao remover diretório temporário '{TMP_ROOT}': {e}")
