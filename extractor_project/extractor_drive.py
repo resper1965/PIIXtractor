@@ -1,10 +1,9 @@
 import os
 import argparse
-import zipfile
 import logging
-import shutil
 
 from pii_extractor import processar_diretorio
+from utils.file_manager import extract_zip, clean_directory
 from extractor.exporters import export_csv, export_json, export_sqlite
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -15,21 +14,17 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s | %(levelname)s | %(message)s')
 
 
-def extract_zip(zip_path: str) -> str:
-    os.makedirs(TMP_DIR, exist_ok=True)
-    with zipfile.ZipFile(zip_path, 'r') as zf:
-        zf.extractall(TMP_DIR)
-    logging.info('ZIP extracted to %s', TMP_DIR)
-    return TMP_DIR
+def extract_zip_wrapper(zip_path: str) -> str:
+    """Legacy wrapper to keep script compatibility."""
+    return str(extract_zip(zip_path, TMP_DIR) or TMP_DIR)
 
 
 def clean_tmp() -> None:
-    if os.path.exists(TMP_DIR):
-        shutil.rmtree(TMP_DIR)
+    clean_directory(TMP_DIR)
 
 
 def run_pipeline(zip_file: str) -> None:
-    extract_zip(zip_file)
+    extract_zip_wrapper(zip_file)
     results = processar_diretorio(TMP_DIR)
     os.makedirs(DATA_DIR, exist_ok=True)
     export_csv(results, os.path.join(DATA_DIR, 'resultados.csv'))

@@ -1,8 +1,6 @@
 import os
 import re
-import zipfile
 import logging
-import shutil
 import time
 from extractor.exporters import export_csv, export_json, export_sqlite
 from dataclasses import dataclass
@@ -16,6 +14,7 @@ from openpyxl import load_workbook
 from PyPDF2 import PdfReader
 from extractor.openai_classifier import classify_text
 from tqdm import tqdm
+from utils.file_manager import extract_zip, clean_directory
 
 # --- Initial Configuration ---
 load_dotenv()
@@ -143,23 +142,15 @@ def processar_diretorio(diretorio: str) -> Dict[str, Any]:
 def extrair_e_processar_zip(zip_path: str) -> Dict[str, Any]:
     """Extrai arquivos de um ZIP e processa seu conteúdo."""
     tmpdir = TMP_ROOT / "piiextractor_tmp"
-    tmpdir.mkdir(parents=True, exist_ok=True)
 
-    try:
-        with zipfile.ZipFile(zip_path, "r") as zip_ref:
-            zip_ref.extractall(tmpdir)
-            logging.info(f"ZIP extraído em: {tmpdir}")
-    except Exception as e:
-        logging.error(f"[ERRO ao extrair ZIP] {e}")
+    extracted = extract_zip(zip_path, str(tmpdir))
+    if extracted is None:
         return {}
 
-    resultados = processar_diretorio(str(tmpdir))
+    resultados = processar_diretorio(str(extracted))
 
-    try:
-        shutil.rmtree(tmpdir)
-        logging.info(f"Diretório temporário removido: {tmpdir}")
-    except Exception as e:
-        logging.warning(f"Falha ao remover tmpdir: {e}")
+    clean_directory(extracted)
+    clean_directory(TMP_ROOT)
 
     return resultados
 
@@ -178,8 +169,4 @@ if __name__ == "__main__":
     export_sqlite(resultados, db_path="resultados.db")
     logging.info("Exportação concluída: CSV, JSON e SQLite.")
 
-    try:
-        shutil.rmtree(TMP_ROOT)
-        logging.info(f"Diretório temporário removido: {TMP_ROOT}")
-    except Exception as e:
-        logging.warning(f"Falha ao remover diretório temporário '{TMP_ROOT}': {e}")
+    clean_directory(TMP_ROOT)
