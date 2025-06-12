@@ -6,7 +6,7 @@ necessário, a API da OpenAI para classificar trechos de texto.
 
 ### Instalação
 
-Antes de executar a ferramenta, instale as dependências:
+Para instalar as dependências necessárias, execute:
 
 ```bash
 pip install -r requirements.txt
