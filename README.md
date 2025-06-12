@@ -15,4 +15,6 @@ python pii_extractor.py
 ```
 
 Durante o processamento será exibida uma barra de progresso indicando o avanço.
-Ao final, os resultados são exportados para arquivos CSV, JSON e SQLite.
+Ao final, os resultados são exportados para arquivos CSV, JSON e SQLite. Todo o
+conteúdo temporário é extraído no diretório `tmp/`, que é removido
+automaticamente após a exportação.
