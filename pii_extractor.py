@@ -4,9 +4,7 @@ import zipfile
 import logging
 import shutil
 import time
-import csv
-import json
-import sqlite3
+from extractor.exporters import export_csv, export_json, export_sqlite
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Any
@@ -140,68 +138,6 @@ def processar_diretorio(diretorio: str) -> Dict[str, Any]:
     return resultados
 
 
-def exportar_resultados_csv(resultados: Dict[str, Any], caminho_csv: str = "resultados.csv") -> None:
-    """Exporta resultados para arquivo CSV."""
-    with open(caminho_csv, mode="w", newline="", encoding="utf-8") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(["arquivo", "origem", "tipo", "valor"])
-        for arquivo, dados in resultados.items():
-            for origem in ["regex", "gpt"]:
-                info = dados.get(origem)
-                if isinstance(info, dict):
-                    for tipo, valores in info.items():
-                        if isinstance(valores, list):
-                            for valor in valores:
-                                writer.writerow([arquivo, origem, tipo, valor])
-                        else:
-                            writer.writerow([arquivo, origem, tipo, valores])
-                else:
-                    writer.writerow([arquivo, origem, "conteudo", info])
-
-
-def exportar_resultados_json(resultados: Dict[str, Any], caminho_json: str = "resultados.json") -> None:
-    """Exporta resultados para arquivo JSON."""
-    with open(caminho_json, "w", encoding="utf-8") as f:
-        json.dump(resultados, f, indent=2, ensure_ascii=False)
-
-
-def exportar_resultados_sqlite(resultados: Dict[str, Any], db_path: str = "resultados.db") -> None:
-    """Exporta resultados para banco SQLite."""
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS dados (
-            arquivo TEXT,
-            origem TEXT,
-            tipo TEXT,
-            valor TEXT
-        )
-        """
-    )
-    for arquivo, dados in resultados.items():
-        for origem in ["regex", "gpt"]:
-            info = dados.get(origem)
-            if isinstance(info, dict):
-                for tipo, valores in info.items():
-                    if isinstance(valores, list):
-                        for valor in valores:
-                            cursor.execute(
-                                "INSERT INTO dados VALUES (?, ?, ?, ?)",
-                                (arquivo, origem, tipo, valor)
-                            )
-                    else:
-                        cursor.execute(
-                            "INSERT INTO dados VALUES (?, ?, ?, ?)",
-                            (arquivo, origem, tipo, valores)
-                        )
-            else:
-                cursor.execute(
-                    "INSERT INTO dados VALUES (?, ?, ?, ?)",
-                    (arquivo, origem, "conteudo", info)
-                )
-    conn.commit()
-    conn.close()
 
 
 def extrair_e_processar_zip(zip_path: str) -> Dict[str, Any]:
@@ -237,9 +173,9 @@ if __name__ == "__main__":
         print("Regex:", info["regex"])
         print("GPT:", info["gpt"])
 
-    exportar_resultados_csv(resultados, caminho_csv="resultados.csv")
-    exportar_resultados_json(resultados, caminho_json="resultados.json")
-    exportar_resultados_sqlite(resultados, db_path="resultados.db")
+    export_csv(resultados, caminho="resultados.csv")
+    export_json(resultados, caminho="resultados.json")
+    export_sqlite(resultados, db_path="resultados.db")
     logging.info("Exportação concluída: CSV, JSON e SQLite.")
 
     try:

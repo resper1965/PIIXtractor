@@ -4,12 +4,8 @@ import zipfile
 import logging
 import shutil
 
-from pii_extractor import (
-    processar_diretorio,
-    exportar_resultados_csv,
-    exportar_resultados_json,
-    exportar_resultados_sqlite,
-)
+from pii_extractor import processar_diretorio
+from extractor.exporters import export_csv, export_json, export_sqlite
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TMP_DIR = os.path.join(BASE_DIR, 'tmp')
@@ -36,9 +32,9 @@ def run_pipeline(zip_file: str) -> None:
     extract_zip(zip_file)
     results = processar_diretorio(TMP_DIR)
     os.makedirs(DATA_DIR, exist_ok=True)
-    exportar_resultados_csv(results, os.path.join(DATA_DIR, 'resultados.csv'))
-    exportar_resultados_json(results, os.path.join(DATA_DIR, 'resultados.json'))
-    exportar_resultados_sqlite(results, os.path.join(DATA_DIR, 'resultados.db'))
+    export_csv(results, os.path.join(DATA_DIR, 'resultados.csv'))
+    export_json(results, os.path.join(DATA_DIR, 'resultados.json'))
+    export_sqlite(results, os.path.join(DATA_DIR, 'resultados.db'))
     clean_tmp()
 
 
