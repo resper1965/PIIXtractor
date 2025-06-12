@@ -8,6 +8,7 @@ import csv
 import json
 import sqlite3
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, Any
 
 from dotenv import load_dotenv
@@ -15,17 +16,18 @@ from validate_docbr import CPF, CNPJ
 from docx import Document
 from openpyxl import load_workbook
 from PyPDF2 import PdfReader
-from openai import OpenAI
+from extractor.openai_classifier import classify_text
 from tqdm import tqdm
 
 # --- Initial Configuration ---
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s"
 )
+
+TMP_ROOT = Path("tmp")
 
 REGEX_PATTERNS = {
     "email": re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
@@ -85,30 +87,6 @@ def extrair_regex(texto: str) -> Dict[str, Any]:
     return resultado
 
 
-def classificar_com_gpt(texto: str) -> str:
-    """Consulta a API do GPT para classificar dados pessoais."""
-    max_chars = 12000
-    if len(texto) > max_chars:
-        logging.warning("Texto excede limite, truncando para 12000 caracteres.")
-        texto = texto[:max_chars]
-
-    prompt = f'''\
-Extraia todos os dados pessoais (nome, CPF, CNPJ, e-mail, telefone, endereço, data de nascimento) do texto abaixo e retorne um JSON com os campos detectados e seus respectivos valores.
-
-Texto:
-"""{texto}"""
-'''
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.0,
-            max_tokens=800
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        logging.error(f"[GPT] Erro: {e}")
-        return "{}"
 
 
 @dataclass
@@ -148,7 +126,9 @@ def processar_diretorio(diretorio: str) -> Dict[str, Any]:
             progresso.atualizar()
             continue
         regex_result = extrair_regex(texto)
-        gpt_result = classificar_com_gpt(texto)
+        gpt_result = ""
+        if not regex_result:
+            gpt_result = classify_text(texto)
         resultados[caminho] = {
             "regex": regex_result,
             "gpt": gpt_result
@@ -226,18 +206,18 @@ def exportar_resultados_sqlite(resultados: Dict[str, Any], db_path: str = "resul
 
 def extrair_e_processar_zip(zip_path: str) -> Dict[str, Any]:
     """Extrai arquivos de um ZIP e processa seu conteúdo."""
-    tmpdir = "/tmp/piiextractor_tmp"
-    os.makedirs(tmpdir, exist_ok=True)
+    tmpdir = TMP_ROOT / "piiextractor_tmp"
+    tmpdir.mkdir(parents=True, exist_ok=True)
 
     try:
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(tmpdir)
             logging.info(f"ZIP extraído em: {tmpdir}")
     except Exception as e:
         logging.error(f"[ERRO ao extrair ZIP] {e}")
         return {}
 
-    resultados = processar_diretorio(tmpdir)
+    resultados = processar_diretorio(str(tmpdir))
 
     try:
         shutil.rmtree(tmpdir)
@@ -261,3 +241,9 @@ if __name__ == "__main__":
     exportar_resultados_json(resultados, caminho_json="resultados.json")
     exportar_resultados_sqlite(resultados, db_path="resultados.db")
     logging.info("Exportação concluída: CSV, JSON e SQLite.")
+
+    try:
+        shutil.rmtree(TMP_ROOT)
+        logging.info(f"Diretório temporário removido: {TMP_ROOT}")
+    except Exception as e:
+        logging.warning(f"Falha ao remover diretório temporário '{TMP_ROOT}': {e}")
